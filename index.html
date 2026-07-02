@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowDraft — Convert Any Business Process into an AI Agent Workflow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a0f; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+    .glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+    .card { background: #13131a; border: 1px solid #1e1e2e; border-radius: 12px; }
+    .step-card { background: #0f0f1a; border: 1px solid #1e1e2e; border-radius: 8px; }
+    .trigger-badge { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+    .tool-badge { background: #1e1e2e; border: 1px solid #2d2d3e; }
+    .human-checkpoint { background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; }
+    .decision-badge { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; }
+    .textarea-main { background: #13131a; border: 1px solid #2d2d3e; border-radius: 8px; color: #e2e8f0; resize: none; outline: none; transition: border-color 0.2s; }
+    .textarea-main:focus { border-color: #6366f1; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .example-chip { background: #1e1e2e; border: 1px solid #2d2d3e; cursor: pointer; transition: border-color 0.2s; }
+    .example-chip:hover { border-color: #6366f1; }
+    .settings-panel { background: #0d0d14; border: 1px solid #1e1e2e; border-radius: 8px; }
+    .cost-card { background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; }
+    .step-number { background: linear-gradient(135deg, #6366f1, #8b5cf6); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .connector-line { width: 2px; background: linear-gradient(180deg, #6366f1 0%, transparent 100%); height: 20px; margin: 0 auto; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    .spinner { border: 2px solid #2d2d3e; border-top-color: #6366f1; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0a0f; } ::-webkit-scrollbar-thumb { background: #2d2d3e; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg trigger-badge flex items-center justify-center text-white text-sm font-bold">FD</div>
+        <div>
+          <span class="font-semibold text-white">FlowDraft</span>
+          <span class="text-gray-500 text-sm ml-2">by RLASAF12</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="settingsBtn" onclick="toggleSettings()" class="text-gray-400 hover:text-white text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          API Key
+        </button>
+        <a href="https://github.com/RLASAF12/flowdraft" target="_blank" class="text-gray-400 hover:text-white text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Settings Panel -->
+  <div id="settingsPanel" class="hidden max-w-7xl mx-auto px-6 pt-4">
+    <div class="settings-panel p-4">
+      <p class="text-sm text-gray-400 mb-3">Enter your <a href="https://aistudio.google.com/apikey" target="_blank" class="text-indigo-400 hover:underline">Gemini API key</a> — stored only in your browser (localStorage), never sent anywhere else.</p>
+      <div class="flex gap-2">
+        <input id="apiKeyInput" type="password" placeholder="AIzaSy..." class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-indigo-500" />
+        <button onclick="saveApiKey()" class="btn-primary text-white text-sm px-4 py-2 rounded-lg font-medium">Save</button>
+        <button onclick="clearApiKey()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg font-medium transition-colors">Clear</button>
+      </div>
+      <p id="keyStatus" class="text-xs mt-2 text-gray-500"></p>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="max-w-7xl mx-auto px-6 pt-12 pb-6 text-center">
+    <div class="inline-flex items-center gap-2 bg-indigo-950 border border-indigo-800 rounded-full px-3 py-1 text-xs text-indigo-300 mb-5">
+      <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+      82% of SMBs bought AI tools. 8.8% have them running. Fix the gap.
+    </div>
+    <h1 class="text-4xl font-bold text-white mb-3 tracking-tight">
+      Turn any business process<br/>into an AI agent workflow
+    </h1>
+    <p class="text-gray-400 text-lg max-w-xl mx-auto">
+      Describe how your team handles something today. Get back an exact blueprint — triggers, tools, decision points, human checkpoints, cost estimate.
+    </p>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="max-w-7xl mx-auto px-6 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Left: Input -->
+      <div class="space-y-4">
+        <div class="card p-5">
+          <label class="block text-sm font-medium text-gray-300 mb-3">
+            Describe your current process
+            <span class="text-gray-500 font-normal ml-2">— be messy, that's fine</span>
+          </label>
+          <textarea
+            id="processInput"
+            class="textarea-main w-full p-4 text-sm leading-relaxed"
+            rows="10"
+            placeholder="Example: When a customer emails us a complaint, one of us reads it, checks their order in our spreadsheet, sometimes calls them, then writes a reply. If it's a refund request we need manager approval first. This takes us about 45 minutes per complaint and we get 15-20 a week..."
+          ></textarea>
+
+          <div class="mt-4 flex items-center gap-3">
+            <button id="convertBtn" onclick="convertProcess()" class="btn-primary text-white font-semibold px-6 py-2.5 rounded-lg text-sm flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Convert to AI Workflow
+            </button>
+            <div id="loadingSpinner" class="hidden items-center gap-2 text-sm text-gray-400">
+              <div class="spinner"></div>
+              <span>Drafting workflow...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Examples -->
+        <div class="card p-5">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Try an example</p>
+          <div class="space-y-2">
+            <button onclick="loadExample(0)" class="example-chip w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-300">
+              📧 Customer complaint handling (email → spreadsheet → reply)
+            </button>
+            <button onclick="loadExample(1)" class="example-chip w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-300">
+              🧾 Invoice creation & follow-up (client → quote → invoice → chase)
+            </button>
+            <button onclick="loadExample(2)" class="example-chip w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-300">
+              🧑‍💼 New hire onboarding (forms → accounts → calendar → buddy)
+            </button>
+            <button onclick="loadExample(3)" class="example-chip w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-300">
+              📦 Inventory reorder (stock check → supplier email → PO → tracking)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Output -->
+      <div id="outputPanel" class="space-y-4">
+
+        <!-- Placeholder -->
+        <div id="outputPlaceholder" class="card p-10 text-center">
+          <div class="w-16 h-16 rounded-2xl bg-indigo-950 border border-indigo-800 flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.5"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          </div>
+          <p class="text-gray-300 font-medium mb-1">Your workflow blueprint will appear here</p>
+          <p class="text-gray-500 text-sm">Paste your process description, hit Convert</p>
+        </div>
+
+        <!-- Result (hidden until populated) -->
+        <div id="outputResult" class="hidden space-y-4 fade-in">
+
+          <!-- Workflow Name + Trigger -->
+          <div class="card p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="workflowName" class="text-lg font-bold text-white mb-1"></h2>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="trigger-badge text-white text-xs font-semibold px-2.5 py-1 rounded-full" id="triggerBadge"></span>
+                  <span class="text-gray-500 text-sm" id="triggerDesc"></span>
+                </div>
+              </div>
+              <button onclick="copyBlueprint()" class="text-gray-500 hover:text-white transition-colors shrink-0" title="Copy JSON">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tools Needed -->
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Tools Needed</h3>
+            <div id="toolsList" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Steps -->
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Workflow Steps</h3>
+            <div id="stepsList" class="space-y-1"></div>
+          </div>
+
+          <!-- Human Checkpoints -->
+          <div id="checkpointsSection" class="card p-5 hidden">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Human Checkpoints</h3>
+            <div id="checkpointsList" class="space-y-2"></div>
+          </div>
+
+          <!-- Cost Estimate -->
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Estimates</h3>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="cost-card p-3 text-center">
+                <p class="text-emerald-400 font-bold text-lg" id="costMonthly">—</p>
+                <p class="text-gray-500 text-xs mt-0.5">Tools/mo</p>
+              </div>
+              <div class="cost-card p-3 text-center">
+                <p class="text-emerald-400 font-bold text-lg" id="setupHours">—</p>
+                <p class="text-gray-500 text-xs mt-0.5">Setup time</p>
+              </div>
+              <div class="cost-card p-3 text-center">
+                <p class="text-emerald-400 font-bold text-lg" id="timeSaved">—</p>
+                <p class="text-gray-500 text-xs mt-0.5">Saved/week</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Wins -->
+          <div id="quickWinsSection" class="card p-5 hidden">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Start Here</h3>
+            <ol id="quickWinsList" class="space-y-2 list-none"></ol>
+          </div>
+
+        </div>
+
+        <!-- Error -->
+        <div id="outputError" class="hidden card p-6">
+          <div class="flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <p class="text-red-400 font-medium mb-1">Couldn't generate workflow</p>
+              <p id="errorMsg" class="text-gray-500 text-sm"></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800 py-6 text-center text-gray-600 text-sm">
+    FlowDraft — Built by Ben (nightly loop) · <a href="https://github.com/RLASAF12/flowdraft" class="hover:text-gray-400 transition-colors">github.com/RLASAF12/flowdraft</a>
+  </footer>
+
+<script>
+const EXAMPLES = [
+  `When a customer emails us a complaint, one of us reads it manually, then checks their order history in our Google Sheet. Sometimes we need to call them. Then we write a reply email. If it involves a refund over $100, we need the manager to approve first. This takes about 45 minutes per complaint and we get 15-20 per week.`,
+  `When we finish a project, we create a quote in Google Docs, email it to the client, then wait. If they approve, we manually create an invoice in QuickBooks. If we haven't heard back in 5 days we send a follow-up. Once paid, we move their folder in Drive and update our tracker spreadsheet.`,
+  `When someone accepts a job offer, our HR person sends them a bunch of forms by email, then manually creates accounts for them in Slack, Google Workspace, and our project tool. We schedule an intro call, assign them a buddy, and add them to the team calendar. Currently this takes 2-3 hours and things get forgotten sometimes.`,
+  `Every Monday morning someone checks our inventory spreadsheet, figures out what's running low, emails our three suppliers, waits for quotes, picks the best one, sends a purchase order, then updates the spreadsheet with expected delivery. Takes 2 hours and we've had stockouts when people forget.`
+];
+
+const SYSTEM_PROMPT = `You are an AI Workflow Architect specializing in small business automation.
+Convert the given business process description into a structured AI agent workflow specification.
+
+Return ONLY valid JSON — no markdown, no explanation, just the JSON object with this exact structure:
+{
+  "workflow_name": "Short descriptive name (3-5 words)",
+  "trigger": {
+    "type": "One of: email | form_submission | schedule | webhook | manual | file_upload | message",
+    "description": "What specifically triggers this workflow to start"
+  },
+  "tools_needed": [
+    {
+      "name": "Tool or app name",
+      "purpose": "What it does in this workflow",
+      "example": "Specific example: Gmail, Notion, Slack, Stripe, QuickBooks, etc."
+    }
+  ],
+  "steps": [
+    {
+      "step_number": 1,
+      "action": "Clear description of what happens in this step",
+      "tool": "Which tool handles this",
+      "decision_point": null
+    },
+    {
+      "step_number": 2,
+      "action": "Step with a decision",
+      "tool": "Tool name",
+      "decision_point": {
+        "condition": "If X condition is true",
+        "true_path": "Then do this",
+        "false_path": "Otherwise do this"
+      }
+    }
+  ],
+  "human_checkpoints": [
+    {
+      "at_step": 3,
+      "reason": "Why a human needs to approve or review here",
+      "estimated_time": "~2 min"
+    }
+  ],
+  "estimated_setup": {
+    "tools_cost_monthly": "$X-Y/mo",
+    "setup_hours": "N-M hrs",
+    "automation_savings": "X hrs/week"
+  },
+  "quick_wins": [
+    "First thing to automate right now (lowest effort, highest impact)",
+    "Second quick win",
+    "Third quick win"
+  ]
+}
+
+Rules:
+- Be specific. Real tool names, not generic "AI tool".
+- Keep steps 4-8 total. Combine small steps.
+- Human checkpoints only where truly needed (approvals, sensitive decisions).
+- Cost estimate should be realistic for SMB budgets ($20-200/mo range).
+- Quick wins should be achievable in a week without coding.`;
+
+let lastBlueprint = null;
+
+function getApiKey() {
+  return localStorage.getItem('flowdraft_gemini_key') || '';
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    const key = getApiKey();
+    document.getElementById('apiKeyInput').value = key;
+    updateKeyStatus();
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) {
+    localStorage.setItem('flowdraft_gemini_key', key);
+    updateKeyStatus();
+    document.getElementById('settingsPanel').classList.add('hidden');
+  }
+}
+
+function clearApiKey() {
+  localStorage.removeItem('flowdraft_gemini_key');
+  document.getElementById('apiKeyInput').value = '';
+  updateKeyStatus();
+}
+
+function updateKeyStatus() {
+  const key = getApiKey();
+  const el = document.getElementById('keyStatus');
+  if (key) {
+    el.textContent = `✓ Key saved (${key.substring(0, 8)}...)`;
+    el.className = 'text-xs mt-2 text-emerald-400';
+  } else {
+    el.textContent = 'No API key saved yet.';
+    el.className = 'text-xs mt-2 text-gray-500';
+  }
+}
+
+function loadExample(idx) {
+  document.getElementById('processInput').value = EXAMPLES[idx];
+}
+
+async function convertProcess() {
+  const input = document.getElementById('processInput').value.trim();
+  if (!input) {
+    alert('Please describe a business process first.');
+    return;
+  }
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('settingsPanel').classList.remove('hidden');
+    document.getElementById('apiKeyInput').focus();
+    return;
+  }
+
+  // Show loading
+  setLoading(true);
+  hideAll();
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            { role: 'user', parts: [{ text: SYSTEM_PROMPT + '\n\nBusiness process to convert:\n' + input }] }
+          ],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 2048
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err?.error?.message || `API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Extract JSON from response
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Model returned unexpected format. Try again.');
+
+    const workflow = JSON.parse(jsonMatch[0]);
+    lastBlueprint = workflow;
+    renderWorkflow(workflow);
+
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderWorkflow(w) {
+  // Name + trigger
+  document.getElementById('workflowName').textContent = w.workflow_name || 'AI Workflow';
+  document.getElementById('triggerBadge').textContent = (w.trigger?.type || 'manual').toUpperCase();
+  document.getElementById('triggerDesc').textContent = w.trigger?.description || '';
+
+  // Tools
+  const toolsEl = document.getElementById('toolsList');
+  toolsEl.innerHTML = '';
+  (w.tools_needed || []).forEach(t => {
+    const chip = document.createElement('div');
+    chip.className = 'tool-badge px-3 py-1.5 rounded-lg text-sm';
+    chip.innerHTML = `<span class="text-white font-medium">${t.example || t.name}</span><span class="text-gray-500 ml-1.5 text-xs">${t.purpose}</span>`;
+    toolsEl.appendChild(chip);
+  });
+
+  // Steps
+  const stepsEl = document.getElementById('stepsList');
+  stepsEl.innerHTML = '';
+  (w.steps || []).forEach((step, i) => {
+    const isLast = i === (w.steps.length - 1);
+    const wrapper = document.createElement('div');
+
+    let decisionHTML = '';
+    if (step.decision_point) {
+      decisionHTML = `
+        <div class="decision-badge px-3 py-2 mt-2 text-xs">
+          <span class="text-blue-400 font-medium">If:</span> ${step.decision_point.condition}<br/>
+          <span class="text-emerald-400 font-medium">→ Yes:</span> ${step.decision_point.true_path}<br/>
+          <span class="text-red-400 font-medium">→ No:</span> ${step.decision_point.false_path}
+        </div>`;
+    }
+
+    wrapper.innerHTML = `
+      <div class="step-card p-3 flex gap-3">
+        <div class="flex flex-col items-center">
+          <div class="step-number text-white">${step.step_number}</div>
+          ${!isLast ? '<div class="connector-line mt-1"></div>' : ''}
+        </div>
+        <div class="flex-1 min-w-0 ${!isLast ? 'pb-4' : ''}">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <p class="text-sm text-gray-200">${step.action}</p>
+            ${step.tool ? `<span class="text-xs text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded font-mono shrink-0">${step.tool}</span>` : ''}
+          </div>
+          ${decisionHTML}
+        </div>
+      </div>`;
+    stepsEl.appendChild(wrapper);
+  });
+
+  // Human Checkpoints
+  const checkpoints = w.human_checkpoints || [];
+  const checkSection = document.getElementById('checkpointsSection');
+  if (checkpoints.length > 0) {
+    const listEl = document.getElementById('checkpointsList');
+    listEl.innerHTML = '';
+    checkpoints.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'human-checkpoint px-3 py-2.5 flex items-start gap-2.5';
+      el.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" class="shrink-0 mt-0.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div>
+          <span class="text-yellow-400 text-xs font-semibold">Step ${c.at_step} · ${c.estimated_time}</span>
+          <p class="text-gray-300 text-sm mt-0.5">${c.reason}</p>
+        </div>`;
+      listEl.appendChild(el);
+    });
+    checkSection.classList.remove('hidden');
+  } else {
+    checkSection.classList.add('hidden');
+  }
+
+  // Cost
+  const est = w.estimated_setup || {};
+  document.getElementById('costMonthly').textContent = est.tools_cost_monthly || '—';
+  document.getElementById('setupHours').textContent = est.setup_hours || '—';
+  document.getElementById('timeSaved').textContent = est.automation_savings || '—';
+
+  // Quick Wins
+  const wins = w.quick_wins || [];
+  const winsSection = document.getElementById('quickWinsSection');
+  if (wins.length > 0) {
+    const listEl = document.getElementById('quickWinsList');
+    listEl.innerHTML = '';
+    wins.forEach((win, i) => {
+      const el = document.createElement('li');
+      el.className = 'flex items-start gap-2.5 text-sm text-gray-300';
+      el.innerHTML = `<span class="w-5 h-5 rounded-full bg-indigo-950 border border-indigo-700 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0 mt-0.5">${i + 1}</span> ${win}`;
+      listEl.appendChild(el);
+    });
+    winsSection.classList.remove('hidden');
+  } else {
+    winsSection.classList.add('hidden');
+  }
+
+  document.getElementById('outputPlaceholder').classList.add('hidden');
+  document.getElementById('outputResult').classList.remove('hidden');
+  document.getElementById('outputResult').classList.add('fade-in');
+}
+
+function showError(msg) {
+  document.getElementById('outputPlaceholder').classList.add('hidden');
+  document.getElementById('outputResult').classList.add('hidden');
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('outputError').classList.remove('hidden');
+}
+
+function hideAll() {
+  document.getElementById('outputPlaceholder').classList.add('hidden');
+  document.getElementById('outputResult').classList.add('hidden');
+  document.getElementById('outputError').classList.add('hidden');
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('convertBtn');
+  const spinner = document.getElementById('loadingSpinner');
+  btn.disabled = on;
+  if (on) {
+    btn.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    spinner.classList.add('flex');
+  } else {
+    btn.classList.remove('hidden');
+    spinner.classList.add('hidden');
+    spinner.classList.remove('flex');
+  }
+}
+
+function copyBlueprint() {
+  if (lastBlueprint) {
+    navigator.clipboard.writeText(JSON.stringify(lastBlueprint, null, 2));
+    // Flash feedback
+    const btn = event.currentTarget;
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  }
+}
+
+// Check for saved key on load
+window.addEventListener('load', () => {
+  const key = getApiKey();
+  if (key) {
+    document.getElementById('keyStatus').textContent = `✓ Key saved (${key.substring(0, 8)}...)`;
+  }
+});
+</script>
+</body>
+</html>
