@@ -378,7 +378,8 @@ async function convertProcess() {
           ],
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 2048
+            maxOutputTokens: 2048,
+            responseMimeType: 'application/json'
           }
         })
       }
@@ -392,11 +393,17 @@ async function convertProcess() {
     const data = await response.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Extract JSON from response
+    // Extract JSON from response (strip markdown fences if present)
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Model returned unexpected format. Try again.');
 
-    const workflow = JSON.parse(jsonMatch[0]);
+    // Sanitize: remove trailing commas and JS-style comments (Gemini sometimes adds them)
+    const cleaned = jsonMatch[0]
+      .replace(/\/\/[^\n]*/g, '')           // strip // comments
+      .replace(/\/\*[\s\S]*?\*\//g, '')     // strip /* block comments */
+      .replace(/,(\s*[}\]])/g, '$1');       // strip trailing commas
+
+    const workflow = JSON.parse(cleaned);
     lastBlueprint = workflow;
     renderWorkflow(workflow);
 
