@@ -1,3 +1,5 @@
+> **Archived.** This repo moved to the private repo RLASAF12/agent-starters (folder `flowdraft/`, full history preserved). Archived 2026-10-04.
+
 # FlowDraft
 
 **Convert any business process description into a complete AI agent workflow spec.**
